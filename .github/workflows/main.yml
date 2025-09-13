@@ -11,12 +11,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # --- VALIDACIÓN DEL SECRET ---
+      - name: Validate AZURE_CREDENTIALS (exists & JSON)
+        env:
+          AZ_CREDS: ${{ secrets.AZURE_CREDENTIALS }}
+        run: |
+          if [ -z "$AZ_CREDS" ]; then
+            echo "❌ Secret AZURE_CREDENTIALS NO existe o está vacío a nivel de REPOSITORIO."
+            echo "   Crea el secret en: Repo → Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+          # Comprueba que sea JSON y que tenga los campos requeridos
+          echo "$AZ_CREDS" | jq -e '.clientId, .tenantId, .subscriptionId, .clientSecret' >/dev/null 2>&1 || {
+            echo "❌ AZURE_CREDENTIALS no es JSON válido o le faltan campos (clientId/tenantId/subscriptionId/clientSecret)."
+            exit 1
+          }
+          echo "✅ AZURE_CREDENTIALS presente y JSON válido."
+
+      # --- LOGIN CON SERVICE PRINCIPAL (JSON) ---
       - name: Login to Azure (SP JSON)
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - uses: hashicorp/setup-terraform@v3
+      # --- TERRAFORM ---
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.5
 
