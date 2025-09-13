@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   build-and-deploy:
-    # environment: prod   # <-- descomenta SOLO si tus secrets están en un Environment
     runs-on: ubuntu-latest
     env:
       ARM_USE_OIDC: "true"
@@ -19,16 +18,7 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Paso de validación (no imprime secrets, solo chequea que existan)
-      - name: Validate OIDC inputs are present
-        run: |
-          test -n "${ARM_CLIENT_ID}" || (echo "AZURE_CLIENT_ID vacío"; exit 1)
-          test -n "${ARM_TENANT_ID}" || (echo "AZURE_TENANT_ID vacío"; exit 1)
-          test -n "${ARM_SUBSCRIPTION_ID}" || (echo "AZURE_SUBSCRIPTION_ID vacío"; exit 1)
-          echo "OK: inputs presentes"
+      - uses: actions/checkout@v4
 
       - name: Login to Azure (OIDC)
         uses: azure/login@v2
@@ -37,8 +27,7 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.5
 
