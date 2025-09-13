@@ -10,9 +10,9 @@ permissions:
 
 jobs:
   build-and-deploy:
+    # environment: prod   # <-- descomenta SOLO si tus secrets están en un Environment
     runs-on: ubuntu-latest
     env:
-      # Variables para provider azurerm con OIDC
       ARM_USE_OIDC: "true"
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
@@ -21,6 +21,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # Paso de validación (no imprime secrets, solo chequea que existan)
+      - name: Validate OIDC inputs are present
+        run: |
+          test -n "${ARM_CLIENT_ID}" || (echo "AZURE_CLIENT_ID vacío"; exit 1)
+          test -n "${ARM_TENANT_ID}" || (echo "AZURE_TENANT_ID vacío"; exit 1)
+          test -n "${ARM_SUBSCRIPTION_ID}" || (echo "AZURE_SUBSCRIPTION_ID vacío"; exit 1)
+          echo "OK: inputs presentes"
 
       - name: Login to Azure (OIDC)
         uses: azure/login@v2
